@@ -15,6 +15,9 @@ namespace CarManufactureAPI
             // Configuración de servicios de negocio y repositorios
             builder.Services.AddSingleton<ISalesRepository, InMemorySalesRepository>();
             builder.Services.AddScoped<ISalesService, SalesService>();
+
+            builder.Services.AddScoped<PerformanceFilter>();
+
             builder.Services.AddControllers();
 
             builder.Services.AddEndpointsApiExplorer();
