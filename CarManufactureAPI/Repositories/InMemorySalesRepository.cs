@@ -70,5 +70,10 @@ namespace CarManufactureAPI.Repositories
         {
             return _distributionCenters.FirstOrDefault(dc => dc.Id == centerId);
         }
+
+        public IEnumerable<Sale> GetAllSales()
+        {
+            return _sales.AsReadOnly();
+        }
     }
 }

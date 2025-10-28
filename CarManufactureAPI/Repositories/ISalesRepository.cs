@@ -17,5 +17,10 @@ namespace CarManufactureAPI.Repositories
         /// Obtiene un centro de distribución por su ID.
         /// </summary>
         DistributionCenter? GetDistributionCenter(int centerId);
+
+        /// <summary>
+        /// Obtiene todas las ventas registradas.
+        /// </summary>
+        IEnumerable<Sale> GetAllSales();
     }
 }

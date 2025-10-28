@@ -87,5 +87,20 @@ namespace CarManufactureAPI.Services
             var validModels = string.Join(", ", Enum.GetNames(typeof(CarModelType)));
             throw new ArgumentException($"El modelo '{carModelInput}' no es válido. Los modelos válidos son: {validModels}");
         }
+
+        /// <summary>
+        /// Obtiene el volumen total de ventas sumando todas las unidades y montos.
+        /// </summary>
+        public TotalVolumeResponse GetTotalVolume()
+        {
+            var allSales = _repository.GetAllSales();
+
+            return new TotalVolumeResponse
+            {
+                TotalUnits = allSales.Sum(s => s.Quantity),
+                TotalAmount = allSales.Sum(s => s.TotalAmount),
+                TotalSales = allSales.Count()
+            };
+        }
     }
 }

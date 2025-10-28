@@ -11,6 +11,7 @@ namespace CarManufactureAPI.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
+    [ServiceFilter(typeof(PerformanceFilter))]
     public class SalesController : ControllerBase
     {
         private readonly ISalesService _salesService;
@@ -57,6 +58,37 @@ namespace CarManufactureAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error inesperado al crear venta");
+                return StatusCode(500, new { error = "Error interno del servidor" });
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el volumen total de ventas (unidades y monto total).
+        /// </summary>
+        /// <returns>Volumen total incluyendo cantidad de unidades, monto total y número de ventas</returns>
+        /// <response code="200">Volumen total obtenido exitosamente</response>
+        [HttpGet("total-volume")]
+        [ProducesResponseType(typeof(TotalVolumeResponse), StatusCodes.Status200OK)]
+        public IActionResult GetTotalVolume()
+        {
+            try
+            {
+                _logger.LogInformation("Obteniendo volumen total de ventas");
+
+                var result = _salesService.GetTotalVolume();
+
+                _logger.LogInformation(
+                    "Volumen total: {TotalUnits} unidades, ${TotalAmount} USD, {TotalSales} ventas",
+                    result.TotalUnits,
+                    result.TotalAmount,
+                    result.TotalSales
+                );
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener volumen total de ventas");
                 return StatusCode(500, new { error = "Error interno del servidor" });
             }
         }

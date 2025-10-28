@@ -8,6 +8,14 @@ namespace CarManufactureAPI.Services
     /// </summary>
     public interface ISalesService
     {
+        /// <summary>
+        /// Crea una nueva venta en el sistema.
+        /// </summary>
         SaleResponse CreateSale(CreateSaleRequest request);
+
+        /// <summary>
+        /// Obtiene el volumen total de ventas (unidades y monto).
+        /// </summary>
+        TotalVolumeResponse GetTotalVolume();
     }
 }
