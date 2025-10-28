@@ -67,15 +67,22 @@ namespace CarManufactureAPI.Tests.Repositories
         }
 
         [Fact]
-        public void GetAllSales_ReturnsAllSalesIncludingMocked()
+        public void GetAllSales_ReturnsAllSales()
         {
-            // Arrange & Act
+            // Arrange
             var repository = new InMemorySalesRepository();
+
+            // Agregar algunas ventas de prueba
+            repository.AddSale(new Sale { CarModel = CarModelType.Sedan, DistributionCenterId = 1, Quantity = 5 });
+            repository.AddSale(new Sale { CarModel = CarModelType.SUV, DistributionCenterId = 2, Quantity = 3 });
+            repository.AddSale(new Sale { CarModel = CarModelType.Sport, DistributionCenterId = 1, Quantity = 2 });
+
+            // Act
             var sales = repository.GetAllSales().ToList();
 
             // Assert
             sales.Should().NotBeNull();
-            sales.Should().HaveCount(20); // 20 ventas mockeadas
+            sales.Should().HaveCount(3);
             sales.Should().AllSatisfy(s => s.Id.Should().BeGreaterThan(0));
         }
 
@@ -86,11 +93,17 @@ namespace CarManufactureAPI.Tests.Repositories
             var repository = new InMemorySalesRepository();
             var centerId = 1;
 
+            // Agregar ventas en diferentes centros
+            repository.AddSale(new Sale { CarModel = CarModelType.Sedan, DistributionCenterId = 1, Quantity = 5 });
+            repository.AddSale(new Sale { CarModel = CarModelType.SUV, DistributionCenterId = 2, Quantity = 3 });
+            repository.AddSale(new Sale { CarModel = CarModelType.Sport, DistributionCenterId = 1, Quantity = 2 });
+
             // Act
             var salesByCenter = repository.GetSalesByCenter(centerId).ToList();
 
             // Assert
             salesByCenter.Should().NotBeNull();
+            salesByCenter.Should().HaveCount(2); // Solo las del centro 1
             salesByCenter.Should().AllSatisfy(s => s.DistributionCenterId.Should().Be(centerId));
         }
 
@@ -127,10 +140,16 @@ namespace CarManufactureAPI.Tests.Repositories
         }
 
         [Fact]
-        public void GetSalesGroupedByCenter_ReturnsValidDictionary()
+        public void GetSalesGroupByCenter_ReturnsValidDictionary()
         {
             // Arrange
             var repository = new InMemorySalesRepository();
+
+            // Agregar ventas en diferentes centros
+            repository.AddSale(new Sale { CarModel = CarModelType.Sedan, DistributionCenterId = 1, Quantity = 5 });
+            repository.AddSale(new Sale { CarModel = CarModelType.SUV, DistributionCenterId = 2, Quantity = 3 });
+            repository.AddSale(new Sale { CarModel = CarModelType.Sport, DistributionCenterId = 1, Quantity = 2 });
+            repository.AddSale(new Sale { CarModel = CarModelType.Offroad, DistributionCenterId = 3, Quantity = 4 });
 
             // Act
             var grouped = repository.GetSalesGroupByCenter();
@@ -138,15 +157,28 @@ namespace CarManufactureAPI.Tests.Repositories
             // Assert
             grouped.Should().NotBeNull();
             grouped.Should().NotBeEmpty();
+            grouped.Should().HaveCount(3); // Centros 1, 2 y 3
             grouped.Keys.Should().AllSatisfy(k => k.Should().BeInRange(1, 4));
             grouped.Values.Should().AllSatisfy(v => v.Should().NotBeEmpty());
+
+            // Verificar que centro 1 tiene 2 ventas
+            grouped[1].Should().HaveCount(2);
+            grouped[2].Should().HaveCount(1);
+            grouped[3].Should().HaveCount(1);
         }
 
         [Fact]
-        public void GetSalesGroupedByCenterAndModel_ReturnsNestedDictionary()
+        public void GetSalesGroupByCenterAndModel_ReturnsNestedDictionary()
         {
             // Arrange
             var repository = new InMemorySalesRepository();
+
+            // Agregar ventas en diferentes centros y modelos
+            repository.AddSale(new Sale { CarModel = CarModelType.Sedan, DistributionCenterId = 1, Quantity = 5 });
+            repository.AddSale(new Sale { CarModel = CarModelType.SUV, DistributionCenterId = 1, Quantity = 3 });
+            repository.AddSale(new Sale { CarModel = CarModelType.Sport, DistributionCenterId = 1, Quantity = 2 });
+            repository.AddSale(new Sale { CarModel = CarModelType.Sedan, DistributionCenterId = 2, Quantity = 4 });
+            repository.AddSale(new Sale { CarModel = CarModelType.Offroad, DistributionCenterId = 2, Quantity = 1 });
 
             // Act
             var grouped = repository.GetSalesGroupByCenterAndModel();
@@ -154,6 +186,18 @@ namespace CarManufactureAPI.Tests.Repositories
             // Assert
             grouped.Should().NotBeNull();
             grouped.Should().NotBeEmpty();
+            grouped.Should().HaveCount(2); // Centros 1 y 2
+
+            // Centro 1 debe tener 3 modelos
+            grouped[1].Should().HaveCount(3);
+            grouped[1].Should().ContainKey(CarModelType.Sedan);
+            grouped[1].Should().ContainKey(CarModelType.SUV);
+            grouped[1].Should().ContainKey(CarModelType.Sport);
+
+            // Centro 2 debe tener 2 modelos
+            grouped[2].Should().HaveCount(2);
+            grouped[2].Should().ContainKey(CarModelType.Sedan);
+            grouped[2].Should().ContainKey(CarModelType.Offroad);
 
             // Verificar que todas las ventas en cada grupo pertenecen al centro y modelo correctos
             foreach (var centerGroup in grouped)
