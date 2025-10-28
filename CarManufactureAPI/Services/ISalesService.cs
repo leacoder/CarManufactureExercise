@@ -17,5 +17,15 @@ namespace CarManufactureAPI.Services
         /// Obtiene el volumen total de ventas (unidades y monto).
         /// </summary>
         TotalVolumeResponse GetTotalVolume();
+
+        /// <summary>
+        /// Obtiene el volumen de ventas agrupado por centro de distribución.
+        /// </summary>
+        VolumeByCenterResponse GetVolumeByCenter();
+
+        /// <summary>
+        /// Obtiene el porcentaje de unidades de cada modelo vendido en cada centro sobre el total de ventas.
+        /// </summary>
+        PercentageByModelAndCenterResponse GetPercentageByModelAndCenter();
     }
 }

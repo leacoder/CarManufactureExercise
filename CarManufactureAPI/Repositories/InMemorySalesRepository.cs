@@ -26,7 +26,7 @@ namespace CarManufactureAPI.Repositories
 
             // Inicializar con datos mockeados de ventas para testing
             _sales = new List<Sale>();
-            GenerateMockSales();
+            //GenerateMockSales();
         }
 
         /// <summary>
@@ -74,6 +74,35 @@ namespace CarManufactureAPI.Repositories
         public IEnumerable<Sale> GetAllSales()
         {
             return _sales.AsReadOnly();
+        }
+
+        public IEnumerable<Sale> GetSalesByCenter(int centerId)
+        {
+            return _sales.Where(s => s.DistributionCenterId == centerId).ToList();
+        }
+
+        public IEnumerable<DistributionCenter> GetAllDistributionCenters()
+        {
+            return _distributionCenters.AsReadOnly();
+        }
+
+        public Dictionary<int, List<Sale>> GetSalesGroupByCenter()
+        {
+            return _sales
+                .GroupBy(s => s.DistributionCenterId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        public Dictionary<int, Dictionary<CarModelType, List<Sale>>> GetSalesGroupByCenterAndModel()
+        {
+            return _sales
+                .GroupBy(s => s.DistributionCenterId)
+                .ToDictionary(
+                    centerGroup => centerGroup.Key,
+                    centerGroup => centerGroup
+                        .GroupBy(s => s.CarModel)
+                        .ToDictionary(modelGroup => modelGroup.Key, modelGroup => modelGroup.ToList())
+                );
         }
     }
 }

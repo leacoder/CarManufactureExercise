@@ -78,5 +78,99 @@ namespace CarManufactureAPI.Tests.Repositories
             sales.Should().HaveCount(20); // 20 ventas mockeadas
             sales.Should().AllSatisfy(s => s.Id.Should().BeGreaterThan(0));
         }
+
+        [Fact]
+        public void GetSalesByCenter_ReturnsOnlySalesForSpecificCenter()
+        {
+            // Arrange
+            var repository = new InMemorySalesRepository();
+            var centerId = 1;
+
+            // Act
+            var salesByCenter = repository.GetSalesByCenter(centerId).ToList();
+
+            // Assert
+            salesByCenter.Should().NotBeNull();
+            salesByCenter.Should().AllSatisfy(s => s.DistributionCenterId.Should().Be(centerId));
+        }
+
+        [Fact]
+        public void GetSalesByCenter_NonExistentCenter_ReturnsEmptyList()
+        {
+            // Arrange
+            var repository = new InMemorySalesRepository();
+
+            // Act
+            var salesByCenter = repository.GetSalesByCenter(999).ToList();
+
+            // Assert
+            salesByCenter.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GetAllDistributionCenters_ReturnsFourCenters()
+        {
+            // Arrange
+            var repository = new InMemorySalesRepository();
+
+            // Act
+            var centers = repository.GetAllDistributionCenters().ToList();
+
+            // Assert
+            centers.Should().HaveCount(4);
+            centers.Should().AllSatisfy(c =>
+            {
+                c.Id.Should().BeInRange(1, 4);
+                c.Name.Should().NotBeNullOrEmpty();
+                c.Location.Should().NotBeNullOrEmpty();
+            });
+        }
+
+        [Fact]
+        public void GetSalesGroupedByCenter_ReturnsValidDictionary()
+        {
+            // Arrange
+            var repository = new InMemorySalesRepository();
+
+            // Act
+            var grouped = repository.GetSalesGroupByCenter();
+
+            // Assert
+            grouped.Should().NotBeNull();
+            grouped.Should().NotBeEmpty();
+            grouped.Keys.Should().AllSatisfy(k => k.Should().BeInRange(1, 4));
+            grouped.Values.Should().AllSatisfy(v => v.Should().NotBeEmpty());
+        }
+
+        [Fact]
+        public void GetSalesGroupedByCenterAndModel_ReturnsNestedDictionary()
+        {
+            // Arrange
+            var repository = new InMemorySalesRepository();
+
+            // Act
+            var grouped = repository.GetSalesGroupByCenterAndModel();
+
+            // Assert
+            grouped.Should().NotBeNull();
+            grouped.Should().NotBeEmpty();
+
+            // Verificar que todas las ventas en cada grupo pertenecen al centro y modelo correctos
+            foreach (var centerGroup in grouped)
+            {
+                var centerId = centerGroup.Key;
+                foreach (var modelGroup in centerGroup.Value)
+                {
+                    var model = modelGroup.Key;
+                    var sales = modelGroup.Value;
+
+                    sales.Should().AllSatisfy(s =>
+                    {
+                        s.DistributionCenterId.Should().Be(centerId);
+                        s.CarModel.Should().Be(model);
+                    });
+                }
+            }
+        }
     }
 }

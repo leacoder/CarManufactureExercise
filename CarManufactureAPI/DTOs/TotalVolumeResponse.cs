@@ -6,19 +6,10 @@ namespace CarManufactureAPI.DTOs
     /// </summary>
     public class TotalVolumeResponse
     {
-        /// <summary>
-        /// Cantidad total de unidades vendidas (suma de todas las ventas)
-        /// </summary>
         public int TotalUnits { get; set; }
 
-        /// <summary>
-        /// Monto total de ventas en dólares USD
-        /// </summary>
         public decimal TotalAmount { get; set; }
 
-        /// <summary>
-        /// Cantidad total de ventas registradas
-        /// </summary>
         public int TotalSales { get; set; }
     }
 }

@@ -207,5 +207,169 @@ namespace CarManufactureAPI.Tests.Services
             result.TotalAmount.Should().Be(0);
             result.TotalSales.Should().Be(0);
         }
+
+        [Fact]
+        public void GetVolumeByCenter_WithMultipleCenters_ReturnsCorrectVolumes()
+        {
+            // Arrange
+            var centers = new List<DistributionCenter>
+            {
+                new DistributionCenter { Id = 1, Name = "Centro Norte", Location = "Norte" },
+                new DistributionCenter { Id = 2, Name = "Centro Sur", Location = "Sur" }
+            };
+
+            var salesByCenter = new Dictionary<int, List<Sale>>
+            {
+                {
+                    1, new List<Sale>
+                    {
+                        new Sale { Id = 1, CarModel = CarModelType.Sedan, DistributionCenterId = 1, Quantity = 5, UnitPrice = 8000m, TotalAmount = 40000m },
+                        new Sale { Id = 2, CarModel = CarModelType.Sport, DistributionCenterId = 1, Quantity = 2, UnitPrice = 19474m, TotalAmount = 38948m }
+                    }
+                },
+                {
+                    2, new List<Sale>
+                    {
+                        new Sale { Id = 3, CarModel = CarModelType.SUV, DistributionCenterId = 2, Quantity = 3, UnitPrice = 9500m, TotalAmount = 28500m }
+                    }
+                }
+            };
+
+            _mockRepository.Setup(r => r.GetAllDistributionCenters()).Returns(centers);
+            _mockRepository.Setup(r => r.GetSalesGroupByCenter()).Returns(salesByCenter);
+
+            // Act
+            var result = _service.GetVolumeByCenter();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Centers.Should().HaveCount(2);
+            result.GrandTotalUnits.Should().Be(10); // 5 + 2 + 3
+            result.GrandTotalAmount.Should().Be(107448m); // 40000 + 38948 + 28500
+
+            var center1 = result.Centers.First(c => c.DistributionCenterId == 1);
+            center1.TotalUnits.Should().Be(7); // 5 + 2
+            center1.TotalAmount.Should().Be(78948m); // 40000 + 38948
+            center1.TotalSales.Should().Be(2);
+
+            var center2 = result.Centers.First(c => c.DistributionCenterId == 2);
+            center2.TotalUnits.Should().Be(3);
+            center2.TotalAmount.Should().Be(28500m);
+            center2.TotalSales.Should().Be(1);
+        }
+
+        [Fact]
+        public void GetVolumeByCenter_WithCenterWithoutSales_IncludesZeroValues()
+        {
+            // Arrange
+            var centers = new List<DistributionCenter>
+            {
+                new DistributionCenter { Id = 1, Name = "Centro Norte", Location = "Norte" },
+                new DistributionCenter { Id = 2, Name = "Centro Sur", Location = "Sur" }
+            };
+
+            var salesByCenter = new Dictionary<int, List<Sale>>
+            {
+                {
+                    1, new List<Sale>
+                    {
+                        new Sale { Id = 1, CarModel = CarModelType.Sedan, DistributionCenterId = 1, Quantity = 5, UnitPrice = 8000m, TotalAmount = 40000m }
+                    }
+                }
+                // Centro 2 no tiene ventas
+            };
+
+            _mockRepository.Setup(r => r.GetAllDistributionCenters()).Returns(centers);
+            _mockRepository.Setup(r => r.GetSalesGroupByCenter()).Returns(salesByCenter);
+
+            // Act
+            var result = _service.GetVolumeByCenter();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Centers.Should().HaveCount(2);
+
+            var center2 = result.Centers.First(c => c.DistributionCenterId == 2);
+            center2.TotalUnits.Should().Be(0);
+            center2.TotalAmount.Should().Be(0);
+            center2.TotalSales.Should().Be(0);
+        }
+
+        [Fact]
+        public void GetPercentageByModelAndCenter_CalculatesCorrectPercentages()
+        {
+            // Arrange
+            var centers = new List<DistributionCenter>
+            {
+                new DistributionCenter { Id = 1, Name = "Centro Norte", Location = "Norte" }
+            };
+
+            var allSales = new List<Sale>
+            {
+                new Sale { Id = 1, CarModel = CarModelType.Sedan, DistributionCenterId = 1, Quantity = 6, UnitPrice = 8000m, TotalAmount = 48000m },
+                new Sale { Id = 2, CarModel = CarModelType.Sport, DistributionCenterId = 1, Quantity = 4, UnitPrice = 19474m, TotalAmount = 77896m }
+            };
+
+            var salesByCenterAndModel = new Dictionary<int, Dictionary<CarModelType, List<Sale>>>
+            {
+                {
+                    1, new Dictionary<CarModelType, List<Sale>>
+                    {
+                        { CarModelType.Sedan, new List<Sale> { allSales[0] } },
+                        { CarModelType.Sport, new List<Sale> { allSales[1] } }
+                    }
+                }
+            };
+
+            _mockRepository.Setup(r => r.GetAllDistributionCenters()).Returns(centers);
+            _mockRepository.Setup(r => r.GetAllSales()).Returns(allSales);
+            _mockRepository.Setup(r => r.GetSalesGroupByCenterAndModel()).Returns(salesByCenterAndModel);
+
+            // Act
+            var result = _service.GetPercentageByModelAndCenter();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.TotalUnitsGlobal.Should().Be(10); // 6 + 4
+            result.Centers.Should().HaveCount(1);
+
+            var center1 = result.Centers.First();
+            center1.TotalUnitsInCenter.Should().Be(10);
+            center1.Models.Should().HaveCount(2);
+
+            var sedanModel = center1.Models.First(m => m.CarModel == "Sedan");
+            sedanModel.UnitsSold.Should().Be(6);
+            sedanModel.PercentageOfCenter.Should().Be(60m); // 6/10 * 100
+            sedanModel.PercentageOfTotal.Should().Be(60m); // 6/10 * 100
+
+            var sportModel = center1.Models.First(m => m.CarModel == "Sport");
+            sportModel.UnitsSold.Should().Be(4);
+            sportModel.PercentageOfCenter.Should().Be(40m); // 4/10 * 100
+            sportModel.PercentageOfTotal.Should().Be(40m); // 4/10 * 100
+        }
+
+        [Fact]
+        public void GetPercentageByModelAndCenter_WithNoSales_ReturnsZeroGlobal()
+        {
+            // Arrange
+            var centers = new List<DistributionCenter>
+            {
+                new DistributionCenter { Id = 1, Name = "Centro Norte", Location = "Norte" }
+            };
+
+            _mockRepository.Setup(r => r.GetAllDistributionCenters()).Returns(centers);
+            _mockRepository.Setup(r => r.GetAllSales()).Returns(new List<Sale>());
+            _mockRepository.Setup(r => r.GetSalesGroupByCenterAndModel())
+                .Returns(new Dictionary<int, Dictionary<CarModelType, List<Sale>>>());
+
+            // Act
+            var result = _service.GetPercentageByModelAndCenter();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.TotalUnitsGlobal.Should().Be(0);
+            result.Centers.Should().HaveCount(1);
+            result.Centers.First().Models.Should().BeEmpty();
+        }
     }
 }

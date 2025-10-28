@@ -102,5 +102,100 @@ namespace CarManufactureAPI.Services
                 TotalSales = allSales.Count()
             };
         }
+
+        /// <summary>
+        /// Obtiene el volumen de ventas agrupado por centro de distribución.
+        /// Para cada centro calcula: total de unidades, monto total y cantidad de ventas.
+        /// </summary>
+        public VolumeByCenterResponse GetVolumeByCenter()
+        {
+            var salesByCenter = _repository.GetSalesGroupByCenter();
+            var allCenters = _repository.GetAllDistributionCenters();
+
+            var centerVolumes = new List<CenterVolumeDetail>();
+
+            // Iterar por todos los centros para incluir también los que no tienen ventas
+            foreach (var center in allCenters)
+            {
+                var centerSales = salesByCenter.ContainsKey(center.Id) ? salesByCenter[center.Id] : new List<Sale>();
+
+                centerVolumes.Add(new CenterVolumeDetail
+                {
+                    DistributionCenterId = center.Id,
+                    DistributionCenterName = center.Name,
+                    TotalUnits = centerSales.Sum(s => s.Quantity),
+                    TotalAmount = centerSales.Sum(s => s.TotalAmount),
+                    TotalSales = centerSales.Count
+                });
+            }
+
+            return new VolumeByCenterResponse
+            {
+                Centers = centerVolumes,
+                GrandTotalUnits = centerVolumes.Sum(c => c.TotalUnits),
+                GrandTotalAmount = centerVolumes.Sum(c => c.TotalAmount)
+            };
+        }
+
+        /// <summary>
+        /// Obtiene el porcentaje de unidades de cada modelo vendido en cada centro.
+        /// Calcula dos tipos de porcentajes:
+        /// 1. Porcentaje sobre el total del centro (qué porcentaje representa cada modelo en ese centro)
+        /// 2. Porcentaje sobre el total global (qué porcentaje representa sobre todas las ventas)
+        /// </summary>
+        public PercentageByModelAndCenterResponse GetPercentageByModelAndCenter()
+        {
+            var salesByCenterAndModel = _repository.GetSalesGroupByCenterAndModel();
+            var allCenters = _repository.GetAllDistributionCenters();
+            var allSales = _repository.GetAllSales();
+
+            // Calcular el total global de unidades para los porcentajes
+            int totalUnitsGlobal = allSales.Sum(s => s.Quantity);
+
+            var centerPercentages = new List<CenterPercentageDetail>();
+
+            foreach (var center in allCenters)
+            {
+                var centerDetail = new CenterPercentageDetail
+                {
+                    DistributionCenterId = center.Id,
+                    DistributionCenterName = center.Name,
+                    Models = new List<ModelPercentageDetail>()
+                };
+
+                // Si el centro tiene ventas, procesarlas
+                if (salesByCenterAndModel.ContainsKey(center.Id))
+                {
+                    var modelSales = salesByCenterAndModel[center.Id];
+                    int totalUnitsInCenter = modelSales.Values.SelectMany(s => s).Sum(s => s.Quantity);
+                    centerDetail.TotalUnitsInCenter = totalUnitsInCenter;
+
+                    // Procesar cada modelo en el centro
+                    foreach (var modelGroup in modelSales)
+                    {
+                        int unitsOfModel = modelGroup.Value.Sum(s => s.Quantity);
+
+                        centerDetail.Models.Add(new ModelPercentageDetail
+                        {
+                            CarModel = modelGroup.Key.ToString(),
+                            UnitsSold = unitsOfModel,
+                            PercentageOfCenter = totalUnitsInCenter > 0 ? Math.Round((decimal)unitsOfModel / totalUnitsInCenter * 100, 2) : 0,
+                            PercentageOfTotal = totalUnitsGlobal > 0 ? Math.Round((decimal)unitsOfModel / totalUnitsGlobal * 100, 2) : 0
+                        });
+                    }
+
+                    // Ordenar por modelo
+                    centerDetail.Models = centerDetail.Models.OrderBy(m => m.CarModel).ToList();
+                }
+
+                centerPercentages.Add(centerDetail);
+            }
+
+            return new PercentageByModelAndCenterResponse
+            {
+                Centers = centerPercentages,
+                TotalUnitsGlobal = totalUnitsGlobal
+            };
+        }
     }
 }

@@ -92,5 +92,65 @@ namespace CarManufactureAPI.Controllers
                 return StatusCode(500, new { error = "Error interno del servidor" });
             }
         }
+
+        /// <summary>
+        /// Obtiene el volumen de ventas agrupado por centro de distribución.
+        /// </summary>
+        /// <returns>Volumen de ventas de cada centro con totales globales</returns>
+        /// <response code="200">Volumen por centro obtenido exitosamente</response>
+        [HttpGet("volume-by-center")]
+        [ProducesResponseType(typeof(VolumeByCenterResponse), StatusCodes.Status200OK)]
+        public IActionResult GetVolumeByCenter()
+        {
+            try
+            {
+                _logger.LogInformation("Obteniendo volumen de ventas por centro de distribución");
+
+                var result = _salesService.GetVolumeByCenter();
+
+                _logger.LogInformation(
+                    "Volumen por centro obtenido: {CenterCount} centros, {GrandTotal} unidades totales",
+                    result.Centers.Count,
+                    result.GrandTotalUnits
+                );
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener volumen de ventas por centro");
+                return StatusCode(500, new { error = "Error interno del servidor" });
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el porcentaje de unidades de cada modelo vendido en cada centro sobre el total de ventas.
+        /// </summary>
+        /// <returns>Porcentajes de cada modelo en cada centro con respecto al total del centro y total global</returns>
+        /// <response code="200">Porcentajes obtenidos exitosamente</response>
+        [HttpGet("percentage-by-model-and-center")]
+        [ProducesResponseType(typeof(PercentageByModelAndCenterResponse), StatusCodes.Status200OK)]
+        public IActionResult GetPercentageByModelAndCenter()
+        {
+            try
+            {
+                _logger.LogInformation("Obteniendo porcentajes de modelos por centro de distribución");
+
+                var result = _salesService.GetPercentageByModelAndCenter();
+
+                _logger.LogInformation(
+                    "Porcentajes obtenidos: {CenterCount} centros analizados, {TotalUnits} unidades totales",
+                    result.Centers.Count,
+                    result.TotalUnitsGlobal
+                );
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener porcentajes de modelos por centro");
+                return StatusCode(500, new { error = "Error interno del servidor" });
+            }
+        }
     }
 }

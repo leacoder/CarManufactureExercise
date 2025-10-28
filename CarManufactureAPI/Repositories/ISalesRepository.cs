@@ -22,5 +22,25 @@ namespace CarManufactureAPI.Repositories
         /// Obtiene todas las ventas registradas.
         /// </summary>
         IEnumerable<Sale> GetAllSales();
+
+        /// <summary>
+        /// Obtiene todas las ventas de un centro de distribución específico.
+        /// </summary>
+        IEnumerable<Sale> GetSalesByCenter(int centerId);
+
+        /// <summary>
+        /// Obtiene todos los centros de distribución.
+        /// </summary>
+        IEnumerable<DistributionCenter> GetAllDistributionCenters();
+
+        /// <summary>
+        /// Obtiene todas las ventas agrupadas por centro de distribución.
+        /// </summary>
+        Dictionary<int, List<Sale>> GetSalesGroupByCenter();
+
+        /// <summary>
+        /// Obtiene todas las ventas agrupadas por centro y modelo de auto.
+        /// </summary>
+        Dictionary<int, Dictionary<CarModelType, List<Sale>>> GetSalesGroupByCenterAndModel();
     }
 }
