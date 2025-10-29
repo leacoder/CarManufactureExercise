@@ -367,20 +367,18 @@ dotnet test
 | **InMemorySalesRepository** | 100% | Todos los métodos testeados |
 | **Models (Sale, DistributionCenter)** | 100% | Lógica de dominio cubierta |
 | **DTOs** | 100% | Objetos de transferencia cubiertos |
-| **Controllers** | No medido | Testeados indirectamente a través de servicios |
-
-**Nota:** La cobertura se enfoca en la lógica de negocio y repositorios. Los controllers se testean indirectamente a través de los servicios.
+| **Controllers** | 100% | Ultimos test que agregue |
 
 ## Datos en Memoria
 
 La API utiliza almacenamiento en memoria y **inicia sin datos pre-cargados**. Las ventas se crean dinámicamente a través del endpoint POST `/api/sales`.
+Hay un metodo que mockea 20 ventas que se puede descomentar para iniciar con datos de ventas ya creados.
 
 Para probar la API con datos:
 1. Inicia la aplicación
 2. Usa el endpoint POST para crear ventas
 3. Consulta los endpoints GET para ver los resultados
 
-Hay un metodo que mockea 20 ventas que se puede descomentar para iniciar con datos de ventas ya creados.
 Los tests unitarios crean sus propios datos mockeados según sea necesario para cada escenario de prueba.
 
 ## Tecnologías Utilizadas
